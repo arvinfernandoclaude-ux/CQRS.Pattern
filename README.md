@@ -25,3 +25,26 @@ Two application patterns side by side: **CQRS with MediatR** and **Service Layer
 | 3 | `Application/DependencyInjection.cs` | Registers `IUserService` (shared with CQRS) |
 | 4 | `WebApi/Controllers/AspNetUsersController.cs` | Injects `IUserService`, calls methods directly |
 | | **Total: 4 files** | **3 classes** (1 interface + 1 service + 1 controller) |
+
+## Service Layer Pattern
+Domain/
+  Entities/
+    AspNetUser.cs
+Application/
+  Common/
+    Interfaces/
+      IApplicationDbContext.cs    ← DB abstraction (implemented by Infrastructure)
+      IUserService.cs             ← business logic abstraction (implemented here in Application)
+    Models/
+      PaginatedList.cs
+  AspNetUsers/
+    DTOs/
+      AspNetUserDto.cs
+  Services/
+    UserService.cs                ← injects IApplicationDbContext
+Infrastructure/
+  Persistence/
+    ApplicationDbContext.cs       ← implements IApplicationDbContext
+WebApi/
+  Controllers/
+    AspNetUsersController.cs      ← injects IUserService
