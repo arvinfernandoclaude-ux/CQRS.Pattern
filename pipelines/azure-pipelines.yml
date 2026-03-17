@@ -1,0 +1,97 @@
+name: '$(Build.DefinitionName)_$(Date:yyyyMMdd)$(Rev:.r)'
+
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - main
+
+variables:
+  buildConfiguration: 'Release'
+  testProjects: 'tests/**/*.csproj'
+  webApiProject: '**/*.sln'
+
+stages:
+  - stage: BuildAndTest
+    displayName: 'Build, Test & Publish Artifact'
+    pool:
+      name: 'sg-devopspool-nonprod'
+      demands:
+        - ImageOverride -equals windows-2022
+    jobs:
+      - job: BuildAndTestJob
+        displayName: 'Build, Test & Publish'
+        steps:
+          - task: UseDotNet@2
+            displayName: 'Install .NET 10 SDK'
+            inputs:
+              packageType: 'sdk'
+              version: '10.x'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Restore NuGet packages'
+            inputs:
+              command: 'restore'
+              projects: '$(webApiProject)'
+              feedsToUse: 'select'
+              includeNuGetOrg: true
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Build solution'
+            inputs:
+              command: 'build'
+              projects: '$(webApiProject)'
+              arguments: >-
+                --configuration $(buildConfiguration)
+                --no-restore
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Run tests with coverage'
+            inputs:
+              command: 'test'
+              projects: '$(testProjects)'
+              arguments: >-
+                --configuration $(buildConfiguration)
+                --no-build
+                --collect:"XPlat Code Coverage"
+                --logger trx
+                --results-directory $(Agent.TempDirectory)/TestResults
+              publishTestResults: false
+
+          - task: PublishTestResults@2
+            displayName: 'Publish test results'
+            inputs:
+              testResultsFormat: 'VSTest'
+              testResultsFiles: '**/*.trx'
+              searchFolder: '$(Agent.TempDirectory)/TestResults'
+              mergeTestResults: true
+              testRunTitle: 'CQRS.Pattern Tests'
+
+          - task: PublishCodeCoverageResults@2
+            displayName: 'Publish code coverage'
+            inputs:
+              summaryFileLocation: '$(Agent.TempDirectory)/TestResults/**/coverage.cobertura.xml'
+              pathToSources: 'src/'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Publish WebApi'
+            inputs:
+              command: 'publish'
+              projects: '$(webApiProject)'
+              arguments: >-
+                --configuration $(buildConfiguration)
+                --no-build
+                --output $(Build.ArtifactStagingDirectory)/app
+              zipAfterPublish: true
+              modifyOutputPath: false
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish pipeline artifact'
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)/app'
+              artifact: 'drop'
+              publishLocation: 'pipeline'

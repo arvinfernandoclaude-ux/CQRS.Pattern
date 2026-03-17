@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- Suppress analysis rules that conflict with Serilog patterns and third-party APIs -->
+    <NoWarn>CA1848;CA1305</NoWarn>
+  </PropertyGroup>
+</Project>

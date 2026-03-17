@@ -1,0 +1,17 @@
+@HostAddress = https://localhost:7130
+
+### Public endpoint (no auth required)
+GET {{HostAddress}}/api/test/public
+Accept: application/json
+
+###
+
+### Private endpoint (requires auth)
+GET {{HostAddress}}/api/test/private
+Accept: application/json
+Authorization: Bearer {{token}}
+
+###
+
+### Health check
+GET {{HostAddress}}/health
